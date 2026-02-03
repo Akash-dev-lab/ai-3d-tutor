@@ -1,6 +1,5 @@
-import React from 'react'
 import Scene from '../canvas/scene'
-import ChatInterface from '../components/ChatInterface'
+import ChatInterface from '../components/chat/ChatInterface'
 
 const App = () => {
   return (
