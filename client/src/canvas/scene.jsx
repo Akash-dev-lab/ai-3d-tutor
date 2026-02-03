@@ -1,138 +1,242 @@
-import { Canvas } from '@react-three/fiber';
+import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import { useState, useEffect, useRef } from 'react';
 import CameraController from './components/CameraController';
-import User from './components/User';
-import AuthServer from './components/AuthServer';
-import Gate from './components/Gate';
-import Token from './components/Token';
+import GameObject from './components/GameObject';
 import ProtectedArea from './components/ProtectedArea';
 
-// --- Configuration: JWT Authentication Step Mapping ---
-// Represents the single source of truth for the authentication flow.
-const JWT_STEPS = {
-  0: {
-    id: 0,
-    title: "Introduction",
-    concept: "Initial State",
-    action: "Reset Scene",
-    description: "The stage is set. Our User (Client) is ready to authenticate."
-  },
-  1: {
-    id: 1,
-    title: "Login Request",
-    concept: "Authentication",
-    action: "User moves to Server",
-    description: "User sends credentials (username/password) to the Auth Server."
-  },
-  2: {
-    id: 2,
-    title: "Token Issued",
-    concept: "Token Generation",
-    action: "Server creates JWT",
-    description: "Server validates credentials and signs a new JSON Web Token."
-  },
-  3: {
-    id: 3,
-    title: "Access Request",
-    concept: "Authorization",
-    action: "User+Token move to Gate",
-    description: "User presents the JWT to the Protected Resource Gate."
-  },
-  4: {
-    id: 4,
-    title: "Verification & Entry",
-    concept: "Validation",
-    action: "Gate opens",
-    description: "Gate verifies the JWT signature and grants access."
-  }
-};
+/* =========================
+   3D COMPONENTS (UNCHANGED)
+   ========================= */
 
-/**
- * Controller: encapsulated logic for JWT flow state
- * Responsibility: Manages logical steps (0-4), fetches narration, and syncs visuals.
- */
-const useJWTController = () => {
-  const [step, setStep] = useState(0); 
-  const [visualStep, setVisualStep] = useState(0);
-  const [narration, setNarration] = useState('');
+function User({ step }) {
+  const meshRef = useRef();
+  const [currentPosition, setCurrentPosition] = useState([0, 0.25, 0]);
+  const [targetPosition, setTargetPosition] = useState([0, 0.25, 0]);
+  const [progress, setProgress] = useState(1);
 
-  // Effect: Sync Narration & Visuals when Step changes
   useEffect(() => {
-    // 1. Fetch explanation for the current step
-    fetch(`http://localhost:5000/api/narration/${step}`)
-      .then(res => res.json())
-      .then(data => {
-        setNarration(data.narration);
-        // 2. Trigger visual animation only after data validates
-        setVisualStep(step);
-      })
-      .catch(err => {
-        console.error('Failed to fetch narration:', err);
-        // Fallback: update visual anyway so app doesn't freeze
-        setVisualStep(step);
-      });
+    if (step === 1) {
+      setTargetPosition([0, 0.25, -8]);
+      setProgress(0);
+    } else if (step === 3) {
+      setTargetPosition([0, 0.25, -18]);
+      setProgress(0);
+    } else if (step === 0) {
+      setTargetPosition([0, 0.25, 0]);
+      setProgress(0);
+    }
   }, [step]);
 
-  const nextStep = () => {
-    setStep(prev => (prev < 4 ? prev + 1 : 0));
-  };
+  useFrame((_, delta) => {
+    if (!meshRef.current || progress >= 1) return;
+
+    setProgress((prev) => {
+      const p = Math.min(prev + delta * 0.5, 1);
+      const pos = [
+        currentPosition[0] + (targetPosition[0] - currentPosition[0]) * p,
+        currentPosition[1] + (targetPosition[1] - currentPosition[1]) * p,
+        currentPosition[2] + (targetPosition[2] - currentPosition[2]) * p,
+      ];
+      meshRef.current.position.set(...pos);
+      if (p === 1) setCurrentPosition(targetPosition);
+      return p;
+    });
+  });
+
+  return (
+    <GameObject ref={meshRef} position={currentPosition} useModel={false}>
+      <mesh>
+        <boxGeometry args={[0.5, 0.5, 0.5]} />
+        <meshStandardMaterial color="#4a9eff" />
+      </mesh>
+    </GameObject>
+  );
+}
+
+function AuthServer() {
+  return (
+    <GameObject position={[0, 2, -10]} useModel={false}>
+      <mesh>
+        <boxGeometry args={[2, 4, 2]} />
+        <meshStandardMaterial color="#4ade80" />
+      </mesh>
+    </GameObject>
+  );
+}
+
+function Gate({ step }) {
+  const barRef = useRef();
+  const [open, setOpen] = useState(false);
+  const [rot, setRot] = useState(0);
+
+  useEffect(() => {
+    if (step === 4) setOpen(true);
+    if (step === 0) setOpen(false);
+  }, [step]);
+
+  useFrame((_, delta) => {
+    if (!barRef.current) return;
+    setRot((r) => {
+      const target = open ? 1 : 0;
+      const next = r + (target - r) * delta * 3;
+      barRef.current.rotation.z = (Math.PI / 2) * next;
+      return next;
+    });
+  });
+
+  return (
+    <GameObject useModel={false}>
+      <mesh position={[-3, 1.5, -20]}>
+        <boxGeometry args={[0.2, 3, 0.2]} />
+        <meshStandardMaterial color="#dc2626" />
+      </mesh>
+      <mesh position={[3, 1.5, -20]}>
+        <boxGeometry args={[0.2, 3, 0.2]} />
+        <meshStandardMaterial color="#dc2626" />
+      </mesh>
+      <group ref={barRef} position={[0, 2.5, -20]}>
+        <mesh>
+          <boxGeometry args={[6.4, 0.1, 0.1]} />
+          <meshStandardMaterial color="#dc2626" />
+        </mesh>
+      </group>
+    </GameObject>
+  );
+}
+
+function Token({ step }) {
+  const meshRef = useRef();
+  const [visible, setVisible] = useState(false);
+  const [z, setZ] = useState(-14);
+  const [targetZ, setTargetZ] = useState(-14);
+  const [progress, setProgress] = useState(1);
+
+  useEffect(() => {
+    if (step === 2) {
+      setVisible(true);
+      setTargetZ(-14);
+      setProgress(0);
+    } else if (step === 3) {
+      setTargetZ(-19);
+      setProgress(0);
+    } else if (step === 0) {
+      setVisible(false);
+    }
+  }, [step]);
+
+  useFrame((state, delta) => {
+    if (!meshRef.current) return;
+
+    meshRef.current.position.y = 2 + Math.sin(state.clock.elapsedTime * 2) * 0.2;
+    meshRef.current.rotation.y += delta * 0.5;
+
+    if (progress < 1) {
+      setProgress((p) => {
+        const np = Math.min(p + delta * 0.5, 1);
+        const nz = z + (targetZ - z) * np;
+        meshRef.current.position.z = nz;
+        if (np === 1) setZ(targetZ);
+        return np;
+      });
+    }
+  });
+
+  if (!visible) return null;
+
+  return (
+    <GameObject ref={meshRef} position={[0, 2, z]} useModel={false}>
+      <mesh>
+        <boxGeometry args={[0.6, 0.4, 0.05]} />
+        <meshStandardMaterial
+          color="#a78bfa"
+          emissive="#a78bfa"
+          emissiveIntensity={2}
+          toneMapped={false}
+        />
+      </mesh>
+    </GameObject>
+  );
+}
+
+/* =========================
+   CONTROLLER (UNCHANGED)
+   ========================= */
+
+const useJWTController = () => {
+  const [step, setStep] = useState(0);
+  const [visualStep, setVisualStep] = useState(0);
+  const [narration, setNarration] = useState('');
+  const JWT_STEPS = {
+  0: { title: "Introduction" },
+  1: { title: "Login Request" },
+  2: { title: "Token Issued" },
+  3: { title: "Access Request" },
+  4: { title: "Verification & Entry" }
+};
+
+  useEffect(() => {
+    fetch(`http://localhost:5000/api/narration/${step}`)
+      .then((r) => r.json())
+      .then((d) => {
+        setNarration(d.narration);
+        setVisualStep(step);
+      })
+      .catch(() => setVisualStep(step));
+  }, [step]);
 
   return {
     currentStep: step,
     visualStep,
     narration,
-    currentMetadata: JWT_STEPS[step],
-    nextStep
+    stepTitle: JWT_STEPS[step].title,
+    nextStep: () => setStep((s) => (s < 4 ? s + 1 : 0)),
   };
 };
 
-function Scene() {
-  const { currentStep, visualStep, narration, currentMetadata, nextStep } = useJWTController();
-  const controlsRef = useRef();
+/* =========================
+   SCENE WORLD (CANVAS CHILD)
+   ========================= */
 
-  // No separate handles needed; Controller manages logic.
+function SceneWorld({ visualStep }) {
+  const controlsRef = useRef();
 
   return (
     <>
-      <Canvas
-        camera={{ position: [5, 5, 5], fov: 50 }}
-        style={{ width: '100%', height: '100vh' }}
-      >
-        {/* Lighting */}
-        <ambientLight intensity={0.8} />
-        <directionalLight position={[10, 10, 5]} intensity={1.2} />
-        <directionalLight position={[-5, 5, -5]} intensity={0.6} />
+      <ambientLight intensity={0.8} />
+      <directionalLight position={[10, 10, 5]} intensity={1.2} />
 
-        {/* Ground Plane */}
-        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
-          <planeGeometry args={[10, 10]} />
-          <meshStandardMaterial color="#2a2a2a" />
-        </mesh>
+      <mesh rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[10, 10]} />
+        <meshStandardMaterial color="#2a2a2a" />
+      </mesh>
 
-        {/* --- Component Orchestration --- */}
+      <User step={visualStep} />
+      <AuthServer />
+      <Gate step={visualStep} />
+      <Token step={visualStep} />
+      <ProtectedArea />
 
-        {/* 1. User: The Client requesting access */}
-        <User step={visualStep} />
+      <OrbitControls ref={controlsRef} enablePan={false} />
+      <CameraController step={visualStep} controlsRef={controlsRef} />
+    </>
+  );
+}
 
-        {/* 2. Auth Server: Validates Credentials & Issues Token */}
-        <AuthServer />
+/* =========================
+   MAIN SCENE (SAFE)
+   ========================= */
 
-        {/* 3. Gate: Enforces security check */}
-        <Gate step={visualStep} />
+export default function Scene() {
+  const { currentStep, visualStep, narration, stepTitle, nextStep } = useJWTController();
 
-        {/* 5. Protected Area: The Destination / Resource */}
-        <ProtectedArea />
-
-        {/* 4. Token: Proof of Identity (Hero Object) */}
-        <Token step={visualStep} />
-
-        {/* Camera Controls */}
-        <OrbitControls ref={controlsRef} enablePan={false} />
-        <CameraController step={visualStep} controlsRef={controlsRef} />
+  return (
+    <>
+      <Canvas camera={{ position: [5, 5, 5], fov: 50 }} style={{ width: '100%', height: '100vh' }}>
+        <SceneWorld visualStep={visualStep} />
       </Canvas>
 
-      {/* Narration Display with Next Button */}
+      {/* UI */}
       <div style={{
         position: 'fixed',
         bottom: '40px',
@@ -153,16 +257,15 @@ function Scene() {
         gap: '12px',
         alignItems: 'center'
       }}>
-        <h3 style={{ margin: '0', color: '#4a9eff', fontSize: '18px' }}>
-          {currentStep === 0 ? currentMetadata.title : `Step ${currentStep}: ${currentMetadata.title}`}
-        </h3>
-        <p style={{ margin: 0, fontSize: '16px', lineHeight: '1.5', color: '#e5e7eb' }}>
-          {narration || 'Loading explanation...'}
-        </p>
-        
-        <button 
-          onClick={nextStep}
-          style={{
+        <h3 style={{ color: '#4a9eff', margin: '0', fontSize: '18px' }}>
+  {currentStep === 0
+    ? stepTitle
+    : `Step ${currentStep}: ${stepTitle}`}
+</h3>
+        <p style={{ margin: 0, fontSize: '16px', lineHeight: '1.5', color: '#e5e7eb' }}>{narration || 'Loading...'}</p>
+
+
+        <button style={{
             padding: '8px 24px',
             background: '#4ade80',
             border: 'none',
@@ -173,13 +276,10 @@ function Scene() {
             fontSize: '14px',
             marginTop: '5px',
             transition: 'transform 0.1s'
-          }}
-        >
+          }} onClick={nextStep}>
           {currentStep < 4 ? 'Next Step' : 'Restart'}
         </button>
       </div>
     </>
   );
 }
-
-export default Scene;
