@@ -1,6 +1,7 @@
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import CameraController from './components/CameraController';
 import User from './components/User';
 import Gate from './components/Gate';
 import Token from './components/Token';
@@ -9,6 +10,7 @@ function Scene() {
   const [step, setStep] = useState(0); // Logical step (for fetching)
   const [visualStep, setVisualStep] = useState(0); // Visual step (for animation)
   const [narration, setNarration] = useState('');
+  const controlsRef = useRef();
 
   // Fetch narration when step changes
   useEffect(() => {
@@ -22,6 +24,14 @@ function Scene() {
       .catch(err => console.error('Failed to fetch narration:', err));
   }, [step]);
   
+  const stepTitles = {
+    0: "Introduction",
+    1: "Login Request",
+    2: "Token Issued",
+    3: "Access Request",
+    4: "Verification & Entry"
+  };
+
   const handleNext = () => {
     setStep(prev => prev < 4 ? prev + 1 : 0);
   };
@@ -64,7 +74,8 @@ function Scene() {
         <Token step={visualStep} />
 
         {/* Camera Controls */}
-        <OrbitControls enablePan={false} />
+        <OrbitControls ref={controlsRef} enablePan={false} />
+        <CameraController step={visualStep} controlsRef={controlsRef} />
       </Canvas>
 
       {/* Narration Display with Next Button */}
@@ -89,7 +100,7 @@ function Scene() {
         alignItems: 'center'
       }}>
         <h3 style={{ margin: '0', color: '#4a9eff', fontSize: '18px' }}>
-          Step {step} Explanation
+          {step === 0 ? stepTitles[0] : `Step ${step}: ${stepTitles[step]}`}
         </h3>
         <p style={{ margin: 0, fontSize: '16px', lineHeight: '1.5', color: '#e5e7eb' }}>
           {narration || 'Loading explanation...'}
