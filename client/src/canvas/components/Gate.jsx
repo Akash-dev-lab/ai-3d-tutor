@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
+import GameObject from './GameObject';
 
 function Gate({ step }) {
   const barRef = useRef();
@@ -9,15 +10,20 @@ function Gate({ step }) {
   const closedRotation = 0;
   const openRotation = Math.PI / 2; // 90 degrees
 
+  // Story-driven triggers
+  const openGate = () => setIsOpen(true);
+  const closeGate = () => setIsOpen(false);
+
   useEffect(() => {
     if (step === 4) {
-      setIsOpen(true);
+      openGate();
     } else if (step === 0) {
-      setIsOpen(false);
+      closeGate();
     }
   }, [step]);
 
-  useFrame((state, delta) => {
+  // Animation Loop
+  const animateGate = (delta) => {
     if (barRef.current) {
       const targetRotation = isOpen ? 1 : 0;
       
@@ -30,10 +36,14 @@ function Gate({ step }) {
         return newProgress;
       });
     }
+  };
+
+  useFrame((state, delta) => {
+    animateGate(delta);
   });
 
   return (
-    <>
+    <GameObject useModel={false}>
       {/* Left Post */}
       <mesh position={[-3, 1.5, -20]}>
         <boxGeometry args={[0.2, 3, 0.2]} />
@@ -44,12 +54,14 @@ function Gate({ step }) {
         <boxGeometry args={[0.2, 3, 0.2]} />
         <meshStandardMaterial color="#dc2626" />
       </mesh>
-      {/* Horizontal Bar */}
-      <mesh ref={barRef} position={[0, 2.5, -20]}>
-        <boxGeometry args={[6.4, 0.1, 0.1]} />
-        <meshStandardMaterial color="#dc2626" />
-      </mesh>
-    </>
+      {/* Horizontal Bar - Wrapped in Group for Animation */}
+      <group ref={barRef} position={[0, 2.5, -20]}>
+        <mesh position={[0, 0, 0]}>
+          <boxGeometry args={[6.4, 0.1, 0.1]} />
+          <meshStandardMaterial color="#dc2626" />
+        </mesh>
+      </group>
+    </GameObject>
   );
 }
 

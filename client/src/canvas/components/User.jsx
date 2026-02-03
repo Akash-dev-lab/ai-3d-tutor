@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
+import GameObject from './GameObject';
 
 function User({ step }) {
   const meshRef = useRef();
@@ -7,24 +8,35 @@ function User({ step }) {
   const [targetPosition, setTargetPosition] = useState([0, 0.25, 0]);
   const [progress, setProgress] = useState(1);
 
+  // Story-driven animation triggers
+  const moveUserToServer = () => {
+    setTargetPosition([0, 0.25, -8]);
+    setProgress(0);
+  };
+
+  const moveUserToGate = () => {
+    setTargetPosition([0, 0.25, -18]);
+    setProgress(0);
+  };
+
+  const resetUser = () => {
+    setTargetPosition([0, 0.25, 0]);
+    setProgress(0);
+  };
+
   useEffect(() => {
     if (step === 1) {
-      // Move to auth server (Server at -10, stop at -8)
-      setTargetPosition([0, 0.25, -8]);
-      setProgress(0);
+      moveUserToServer();
     } else if (step === 3) {
-      // Move to gate (Gate at -20, stop at -18)
-      setTargetPosition([0, 0.25, -18]);
-      setProgress(0);
+      moveUserToGate();
     } else if (step === 0) {
-      // Reset position on idle
-      setTargetPosition([0, 0.25, 0]);
-      setProgress(0);
+      resetUser();
     }
   }, [step]);
 
-  useFrame((state, delta) => {
-    if (meshRef.current && progress < 1) {
+  // Animation Loop
+  const animateMovement = (delta) => {
+    if (progress < 1) {
       setProgress((prev) => {
         const newProgress = Math.min(prev + delta * 0.5, 1);
         
@@ -44,13 +56,23 @@ function User({ step }) {
         return newProgress;
       });
     }
+  };
+
+  useFrame((state, delta) => {
+    if (meshRef.current) {
+      animateMovement(delta);
+    }
   });
 
+
+
   return (
-    <mesh ref={meshRef} position={currentPosition}>
-      <boxGeometry args={[0.5, 0.5, 0.5]} />
-      <meshStandardMaterial color="#4a9eff" />
-    </mesh>
+    <GameObject ref={meshRef} position={currentPosition} useModel={false}>
+      <mesh>
+        <boxGeometry args={[0.5, 0.5, 0.5]} />
+        <meshStandardMaterial color="#4a9eff" />
+      </mesh>
+    </GameObject>
   );
 }
 

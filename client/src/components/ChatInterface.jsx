@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 
 const ChatInterface = () => {
   const [messages, setMessages] = useState([
-    { text: "Hello! I'm your AI Tutor. Ask me anything about JWTs!", sender: "ai" }
+    { text: "Hello! I'm your AI Tutor. Ask me things like \"Why does this step work?\" or \"What happens if the token expires?\"", sender: "ai" }
   ]);
   const [input, setInput] = useState("");
   const [isMinimized, setIsMinimized] = useState(false);
@@ -149,7 +149,7 @@ const ChatInterface = () => {
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Ask about JWT..."
+          placeholder="Ask why this step works..."
           style={{
             flex: 1,
             padding: '10px',
