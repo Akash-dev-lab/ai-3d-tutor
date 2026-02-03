@@ -3,22 +3,22 @@ import { useFrame } from '@react-three/fiber';
 
 function User({ step }) {
   const meshRef = useRef();
-  const [currentPosition, setCurrentPosition] = useState([0, 0.5, 0]);
-  const [targetPosition, setTargetPosition] = useState([0, 0.5, 0]);
+  const [currentPosition, setCurrentPosition] = useState([0, 0.25, 0]);
+  const [targetPosition, setTargetPosition] = useState([0, 0.25, 0]);
   const [progress, setProgress] = useState(1);
 
   useEffect(() => {
     if (step === 1) {
-      // Move to auth server
-      setTargetPosition([0, 0.5, -2]);
+      // Move to auth server (new position at -7, stop early at -5.25)
+      setTargetPosition([0, 0.25, -5.25]);
       setProgress(0);
     } else if (step === 3) {
-      // Move to gate
-      setTargetPosition([0, 0.5, -4.5]);
+      // Move to gate (new position at -14)
+      setTargetPosition([0, 0.25, -13]);
       setProgress(0);
     } else if (step === 0) {
       // Reset position on idle
-      setTargetPosition([0, 0.5, 0]);
+      setTargetPosition([0, 0.25, 0]);
       setProgress(0);
     }
   }, [step]);
@@ -48,7 +48,7 @@ function User({ step }) {
 
   return (
     <mesh ref={meshRef} position={currentPosition}>
-      <boxGeometry args={[1, 1, 1]} />
+      <boxGeometry args={[0.5, 0.5, 0.5]} />
       <meshStandardMaterial color="#4a9eff" />
     </mesh>
   );

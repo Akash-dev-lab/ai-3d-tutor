@@ -12,7 +12,7 @@ function Token({ step }) {
   }, [step]);
 
   return (
-    <mesh position={[0, 1.5, -2.5]} visible={isVisible}>
+    <mesh position={[0, 2, -5]} visible={isVisible}>
       <boxGeometry args={[0.6, 0.4, 0.05]} />
       <meshStandardMaterial 
         color="#a78bfa" 

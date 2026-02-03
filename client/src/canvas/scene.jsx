@@ -47,16 +47,17 @@ function Scene() {
         <User step={visualStep} />
 
         {/* Auth Server - Building */}
-        <mesh position={[0, 1, -3]}>
-          <boxGeometry args={[1.5, 2, 1.5]} />
+        {/* Auth Server - Building (Tallest) */}
+        <mesh position={[0, 2, -7]}>
+          <boxGeometry args={[2, 4, 2]} />
           <meshStandardMaterial color="#4ade80" />
         </mesh>
 
         <Gate step={visualStep} />
 
-        {/* Protected Area - Behind Gate */}
-        <mesh position={[0, 0.75, -7]}>
-          <boxGeometry args={[2, 1.5, 2]} />
+        {/* Protected Area - Behind Gate (Wide) */}
+        <mesh position={[0, 1, -22]}>
+          <boxGeometry args={[4, 2, 4]} />
           <meshStandardMaterial color="#fbbf24" />
         </mesh>
 
