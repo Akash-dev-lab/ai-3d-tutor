@@ -1,9 +1,16 @@
-import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls } from '@react-three/drei';
-import { useState, useEffect, useRef } from 'react';
-import CameraController from './components/CameraController';
-import GameObject from './components/GameObject';
-import ProtectedArea from './components/ProtectedArea';
+import { Canvas, useFrame } from "@react-three/fiber";
+import { OrbitControls } from "@react-three/drei";
+import { useState, useEffect, useRef } from "react";
+import CameraController from "./components/CameraController";
+import GameObject from "./components/GameObject";
+import ProtectedArea from "./components/ProtectedArea";
+const JWT_STEP_CONFIG = {
+  0: { title: "Introduction", next: 1 },
+  1: { title: "Login Request", next: 2 },
+  2: { title: "Token Issued", next: 3 },
+  3: { title: "Access Request", next: 4 },
+  4: { title: "Verification & Entry", next: 0 }, // restart
+};
 
 /* =========================
    3D COMPONENTS (UNCHANGED)
@@ -128,7 +135,8 @@ function Token({ step }) {
   useFrame((state, delta) => {
     if (!meshRef.current) return;
 
-    meshRef.current.position.y = 2 + Math.sin(state.clock.elapsedTime * 2) * 0.2;
+    meshRef.current.position.y =
+      2 + Math.sin(state.clock.elapsedTime * 2) * 0.2;
     meshRef.current.rotation.y += delta * 0.5;
 
     if (progress < 1) {
@@ -166,31 +174,41 @@ function Token({ step }) {
 const useJWTController = () => {
   const [step, setStep] = useState(0);
   const [visualStep, setVisualStep] = useState(0);
-  const [narration, setNarration] = useState('');
-  const JWT_STEPS = {
-  0: { title: "Introduction" },
-  1: { title: "Login Request" },
-  2: { title: "Token Issued" },
-  3: { title: "Access Request" },
-  4: { title: "Verification & Entry" }
-};
+  const [narration, setNarration] = useState("Loading...");
+
+  // 🔒 Guard: ensure step is always valid
+  const safeStep = JWT_STEP_CONFIG[step] ? step : 0;
 
   useEffect(() => {
-    fetch(`http://localhost:5000/api/narration/${step}`)
-      .then((r) => r.json())
-      .then((d) => {
-        setNarration(d.narration);
-        setVisualStep(step);
+    // 1️⃣ Visuals must respond immediately
+    setVisualStep(safeStep);
+
+    // 2️⃣ Narration async (non-blocking)
+    setNarration("Loading...");
+
+    fetch(`http://localhost:5000/api/narration/${safeStep}`)
+      .then((res) => res.json())
+      .then((data) => {
+        setNarration(data?.narration || "Explanation unavailable.");
       })
-      .catch(() => setVisualStep(step));
-  }, [step]);
+      .catch(() => {
+        setNarration("Explanation unavailable (offline).");
+      });
+  }, [safeStep]);
+
+  const nextStep = () => {
+    const next = JWT_STEP_CONFIG[safeStep]?.next ?? 0;
+    setStep(next);
+  };
 
   return {
-    currentStep: step,
+    currentStep: safeStep,
     visualStep,
     narration,
-    stepTitle: JWT_STEPS[step].title,
-    nextStep: () => setStep((s) => (s < 4 ? s + 1 : 0)),
+    stepTitle: JWT_STEP_CONFIG[safeStep].title,
+    isFirstStep: safeStep === 0,
+    isLastStep: safeStep === 4,
+    nextStep,
   };
 };
 
@@ -228,56 +246,89 @@ function SceneWorld({ visualStep }) {
    ========================= */
 
 export default function Scene() {
-  const { currentStep, visualStep, narration, stepTitle, nextStep } = useJWTController();
+  const {
+    currentStep,
+    visualStep,
+    narration,
+    stepTitle,
+    isFirstStep,
+    isLastStep,
+    nextStep,
+  } = useJWTController();
 
   return (
     <>
-      <Canvas camera={{ position: [5, 5, 5], fov: 50 }} style={{ width: '100%', height: '100vh' }}>
+      <Canvas
+        camera={{ position: [5, 5, 5], fov: 50 }}
+        style={{ width: "100%", height: "100vh" }}
+      >
         <SceneWorld visualStep={visualStep} />
       </Canvas>
 
       {/* UI */}
-      <div style={{
-        position: 'fixed',
-        bottom: '40px',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        background: 'rgba(0, 0, 0, 0.85)',
-        padding: '20px 30px',
-        borderRadius: '12px',
-        color: 'white',
-        fontFamily: 'system-ui, sans-serif',
-        maxWidth: '600px',
-        textAlign: 'center',
-        zIndex: 1000,
-        boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
-        border: '1px solid rgba(255,255,255,0.1)',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '12px',
-        alignItems: 'center'
-      }}>
-        <h3 style={{ color: '#4a9eff', margin: '0', fontSize: '18px' }}>
-  {currentStep === 0
-    ? stepTitle
-    : `Step ${currentStep}: ${stepTitle}`}
-</h3>
-        <p style={{ margin: 0, fontSize: '16px', lineHeight: '1.5', color: '#e5e7eb' }}>{narration || 'Loading...'}</p>
+      <div
+        style={{
+          position: "fixed",
+          bottom: "40px",
+          left: "50%",
+          transform: "translateX(-50%)",
+          background: "rgba(0, 0, 0, 0.85)",
+          padding: "22px 30px",
+          borderRadius: "14px",
+          color: "white",
+          fontFamily: "system-ui, sans-serif",
+          maxWidth: "600px",
+          textAlign: "center",
+          zIndex: 1000,
+          boxShadow: "0 4px 20px rgba(0,0,0,0.5)",
+          border: "1px solid rgba(255,255,255,0.1)",
+          display: "flex",
+          flexDirection: "column",
+          gap: "12px",
+          alignItems: "center",
+        }}
+      >
+        {/* 🔹 STEP TITLE */}
+        <h3
+          style={{
+            margin: 0,
+            fontSize: "18px",
+            fontWeight: "600",
+            color: "#4a9eff",
+          }}
+        >
+          {isFirstStep ? stepTitle : `Step ${currentStep}: ${stepTitle}`}
+        </h3>
 
+        {/* 🔹 STEP DESCRIPTION */}
+        <p
+          style={{
+            margin: 0,
+            fontSize: "16px",
+            lineHeight: "1.5",
+            color: "#e5e7eb",
+          }}
+        >
+          {narration || "Loading..."}
+        </p>
 
-        <button style={{
-            padding: '8px 24px',
-            background: '#4ade80',
-            border: 'none',
-            borderRadius: '20px',
-            color: 'black',
-            fontWeight: 'bold',
-            cursor: 'pointer',
-            fontSize: '14px',
-            marginTop: '5px',
-            transition: 'transform 0.1s'
-          }} onClick={nextStep}>
-          {currentStep < 4 ? 'Next Step' : 'Restart'}
+        {/* 🔹 ACTION BUTTON */}
+        <button
+          style={{
+            padding: "8px 26px",
+            background: "#4ade80",
+            border: "none",
+            borderRadius: "20px",
+            color: "black",
+            fontWeight: "bold",
+            cursor: "pointer",
+            fontSize: "14px",
+            marginTop: "6px",
+            transition: "transform 0.1s",
+          }}
+          onClick={nextStep}
+        >
+          {isLastStep ? "Restart" : "Next Step"}
         </button>
       </div>
     </>
