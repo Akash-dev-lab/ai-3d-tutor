@@ -35,17 +35,17 @@ function Gate({ step }) {
   return (
     <>
       {/* Left Post */}
-      <mesh position={[-3, 1.5, -14]}>
+      <mesh position={[-3, 1.5, -20]}>
         <boxGeometry args={[0.2, 3, 0.2]} />
         <meshStandardMaterial color="#dc2626" />
       </mesh>
       {/* Right Post */}
-      <mesh position={[3, 1.5, -14]}>
+      <mesh position={[3, 1.5, -20]}>
         <boxGeometry args={[0.2, 3, 0.2]} />
         <meshStandardMaterial color="#dc2626" />
       </mesh>
       {/* Horizontal Bar */}
-      <mesh ref={barRef} position={[0, 2.5, -14]}>
+      <mesh ref={barRef} position={[0, 2.5, -20]}>
         <boxGeometry args={[6.4, 0.1, 0.1]} />
         <meshStandardMaterial color="#dc2626" />
       </mesh>

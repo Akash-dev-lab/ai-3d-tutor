@@ -9,12 +9,12 @@ function User({ step }) {
 
   useEffect(() => {
     if (step === 1) {
-      // Move to auth server (new position at -7, stop early at -5.25)
-      setTargetPosition([0, 0.25, -5.25]);
+      // Move to auth server (Server at -10, stop at -8)
+      setTargetPosition([0, 0.25, -8]);
       setProgress(0);
     } else if (step === 3) {
-      // Move to gate (new position at -14)
-      setTargetPosition([0, 0.25, -13]);
+      // Move to gate (Gate at -20, stop at -18)
+      setTargetPosition([0, 0.25, -18]);
       setProgress(0);
     } else if (step === 0) {
       // Reset position on idle
