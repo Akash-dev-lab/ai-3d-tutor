@@ -1,26 +1,43 @@
-import React, { useRef, useState, useEffect } from 'react';
-import { useFrame } from '@react-three/fiber';
-import GameObject from './GameObject';
+import React, { useRef, useState, useEffect } from "react";
+import { useFrame } from "@react-three/fiber";
+import { useGLTF, useAnimations } from "@react-three/drei";
+import GameObject from "./GameObject";
+
+const BASE_Y = 0; // Ground level for character mesh
+
+function UserModel() {
+  const groupRef = useRef();
+  const { animations, scene } = useGLTF("models/Standing-idle.glb");
+  const { actions, names } = useAnimations(animations, groupRef);
+
+  useEffect(() => {
+    const idle = actions[names[0]];
+    idle?.reset().fadeIn(0.3).play();
+    return () => idle?.fadeOut(0.2);
+  }, [actions, names]);
+
+  return <primitive ref={groupRef} object={scene} />;
+}
 
 function User({ step }) {
   const meshRef = useRef();
-  const [currentPosition, setCurrentPosition] = useState([0, 0.25, 0]);
-  const [targetPosition, setTargetPosition] = useState([0, 0.25, 0]);
+  const [currentPosition, setCurrentPosition] = useState([0, BASE_Y, 0]);
+  const [targetPosition, setTargetPosition] = useState([0, BASE_Y, 0]);
   const [progress, setProgress] = useState(1);
 
   // Story-driven animation triggers
   const moveUserToServer = () => {
-    setTargetPosition([0, 0.25, -8]);
+    setTargetPosition([0, BASE_Y, -8]);
     setProgress(0);
   };
 
   const moveUserToGate = () => {
-    setTargetPosition([0, 0.25, -18]);
+    setTargetPosition([0, BASE_Y, -18]);
     setProgress(0);
   };
 
   const resetUser = () => {
-    setTargetPosition([0, 0.25, 0]);
+    setTargetPosition([0, BASE_Y, 0]);
     setProgress(0);
   };
 
@@ -34,19 +51,21 @@ function User({ step }) {
     }
   }, [step]);
 
-  // Animation Loop
+  // Animation Loop - Position Interpolation
   const animateMovement = (delta) => {
     if (progress < 1) {
       setProgress((prev) => {
         const newProgress = Math.min(prev + delta * 0.5, 1);
-        
-        // Interpolate position
+
         const newPos = [
-          currentPosition[0] + (targetPosition[0] - currentPosition[0]) * newProgress,
-          currentPosition[1] + (targetPosition[1] - currentPosition[1]) * newProgress,
-          currentPosition[2] + (targetPosition[2] - currentPosition[2]) * newProgress,
+          currentPosition[0] +
+            (targetPosition[0] - currentPosition[0]) * newProgress,
+          currentPosition[1] +
+            (targetPosition[1] - currentPosition[1]) * newProgress,
+          currentPosition[2] +
+            (targetPosition[2] - currentPosition[2]) * newProgress,
         ];
-        
+
         meshRef.current.position.set(...newPos);
 
         if (newProgress >= 1) {
@@ -64,16 +83,16 @@ function User({ step }) {
     }
   });
 
-
-
   return (
-    <GameObject ref={meshRef} position={currentPosition} useModel={false}>
-      <mesh>
-        <boxGeometry args={[0.5, 0.5, 0.5]} />
-        <meshStandardMaterial color="#4a9eff" />
-      </mesh>
+    <GameObject ref={meshRef} position={currentPosition} useModel={true}>
+      <group scale={0.9} rotation={[0, Math.PI, 0]}>
+        <UserModel />
+      </group>
     </GameObject>
   );
 }
+
+// Preload the model
+useGLTF.preload("models/Standing-idle.glb");
 
 export default User;

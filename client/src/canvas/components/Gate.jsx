@@ -1,11 +1,12 @@
-import React, { useRef, useState, useEffect } from 'react';
-import { useFrame } from '@react-three/fiber';
-import GameObject from './GameObject';
-
+import React, { useRef, useState, useEffect } from "react";
+import { useFrame } from "@react-three/fiber";
+import GameObject from "./GameObject";
 function Gate({ step }) {
   const barRef = useRef();
   const [isOpen, setIsOpen] = useState(false);
   const [rotationProgress, setRotationProgress] = useState(0);
+
+  const isDenied = step === 5 || step === 6;
 
   const closedRotation = 0;
   const openRotation = Math.PI / 2; // 90 degrees
@@ -17,8 +18,13 @@ function Gate({ step }) {
   useEffect(() => {
     if (step === 4) {
       openGate();
-    } else if (step === 0) {
+    } else {
       closeGate();
+      // FORCE reset rotation state so gate visually snaps shut
+      setRotationProgress(0);
+      if (barRef.current) {
+        barRef.current.rotation.z = closedRotation;
+      }
     }
   }, [step]);
 
@@ -26,13 +32,14 @@ function Gate({ step }) {
   const animateGate = (delta) => {
     if (barRef.current) {
       const targetRotation = isOpen ? 1 : 0;
-      
+
       setRotationProgress((prev) => {
         const newProgress = prev + (targetRotation - prev) * delta * 3;
-        
+
         // Apply rotation to the bar
-        barRef.current.rotation.z = closedRotation + (openRotation - closedRotation) * newProgress;
-        
+        barRef.current.rotation.z =
+          closedRotation + (openRotation - closedRotation) * newProgress;
+
         return newProgress;
       });
     }
@@ -40,6 +47,17 @@ function Gate({ step }) {
 
   useFrame((state, delta) => {
     animateGate(delta);
+
+    if (barRef.current) {
+      if (isDenied) {
+        // STRONG horizontal shake animation
+        const time = state.clock.getElapsedTime();
+        barRef.current.position.x = Math.sin(time * 40) * 0.3; // Increased amplitude and frequency
+      } else {
+        // Reset position when not denied
+        barRef.current.position.x = 0;
+      }
+    }
   });
 
   return (
