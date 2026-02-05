@@ -86,12 +86,36 @@ function SceneWorld({ visualStep }) {
 
   return (
     <Suspense fallback={null}>
-      <color attach="background" args={["#05080a"]} />
-      <fog attach="fog" args={["#05080a", 5, 45]} />
+      <color attach="background" args={["#06080a"]} />
+      <fog attach="fog" args={["#06080a", 15, 60]} />
 
-      <ambientLight intensity={0.4} />
-      <directionalLight position={[10, 10, 5]} intensity={1} />
-      <pointLight position={[-10, 5, -10]} color="#00ffff" intensity={2} />
+      {/* 1. Ambient Light (Low base visibility) */}
+      <ambientLight intensity={0.15} />
+
+      {/* 2. Key Light (Hero highlighting) */}
+      <directionalLight
+        position={[15, 15, 15]}
+        intensity={0.8}
+        color="#ffffff"
+      />
+
+      {/* 3. Fill Light (Cool shadows) */}
+      <pointLight position={[-15, 5, 10]} intensity={0.6} color="#aaccff" />
+
+      {/* 4. Rim Light (Edge separation - Cyan) */}
+      <directionalLight
+        position={[0, 5, -30]}
+        intensity={2.0}
+        color="#00ffff"
+      />
+
+      {/* 5. Character Support Light (Follows action) */}
+      <pointLight
+        position={[0, 5, -10]}
+        intensity={1.2}
+        color="#ffffff"
+        distance={25}
+      />
 
       <TechEnvironment />
 

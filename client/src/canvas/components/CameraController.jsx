@@ -1,48 +1,40 @@
 import React, { useRef, useEffect } from "react";
 import { useFrame } from "@react-three/fiber";
+import * as THREE from "three";
 
 function CameraController({ step, controlsRef }) {
-  // Target positions for each step
-  const targets = {
-    0: [0, 0, 0], // Idle: Look at start
-    1: [0, 1, -5], // User moving to Server (-10)
-    2: [0, 2, -10], // Token Generation - Focus on Server area
-    3: [0, 2, -15], // Token Moving to Gate - Follow the flow
-    4: [0, 1, -25], // Gate Opening/End - Focus on Protected Area
-    5: [0, 1.5, -20], // Denial: Expired Token - Focus on Gate
-    6: [0, 1.5, -20], // Denial: Invalid Token - Focus on Gate
+  // Camera shots: { position, target }
+  const shots = {
+    0: { position: [10, 8, 10], target: [0, 1, -10] }, // Intro: Wide
+    1: { position: [6, 4, -2], target: [0, 1, -8] }, // Login: Following User
+    2: { position: [2.5, 2.5, -6], target: [0, 2, -11] }, // Token Issued: Close-up Server
+    3: { position: [5, 3.5, -13], target: [0, 2, -19] }, // Access Request: Tracking to Gate
+    4: { position: [8, 5, -22], target: [0, 1, -28] }, // Success: Wide entry
+    5: { position: [2.5, 2.2, -16], target: [0, 2, -20] }, // Expired: Tight shot on Gate
+    6: { position: [-2.5, 2.2, -16], target: [0, 2, -20] }, // Invalid: Tight alternative
   };
 
-  const currentTarget = useRef([0, 0, 0]);
+  const currentTarget = useRef(new THREE.Vector3(0, 0, 0));
+  const currentPosition = useRef(new THREE.Vector3(10, 8, 10));
 
   useFrame((state, delta) => {
     if (!controlsRef.current) return;
 
-    // Use current step target if available, otherwise stay at current target (no fallback to 0,0,0)
-    const desiredTarget = targets[step] || currentTarget.current;
+    const shot = shots[step] || shots[0];
+    const desiredTarget = new THREE.Vector3(...shot.target);
+    const desiredPosition = new THREE.Vector3(...shot.position);
 
-    // Smoothly interpolate current target towards desired target
-    const speed = 2 * delta;
+    // Smoothly interpolate both target and position
+    const speed = 2.5 * delta;
 
-    currentTarget.current[0] +=
-      (desiredTarget[0] - currentTarget.current[0]) * speed;
-    currentTarget.current[1] +=
-      (desiredTarget[1] - currentTarget.current[1]) * speed;
-    currentTarget.current[2] +=
-      (desiredTarget[2] - currentTarget.current[2]) * speed;
+    currentTarget.current.lerp(desiredTarget, speed);
+    currentPosition.current.lerp(desiredPosition, speed);
+
+    // Update camera position
+    state.camera.position.copy(currentPosition.current);
 
     // Update controls target
-    controlsRef.current.target.set(
-      currentTarget.current[0],
-      currentTarget.current[1],
-      currentTarget.current[2],
-    );
-
-    // Optional: Auto-reset camera position on step 0
-    if (step === 0) {
-      state.camera.position.lerp({ x: 5, y: 5, z: 5 }, speed);
-    }
-
+    controlsRef.current.target.copy(currentTarget.current);
     controlsRef.current.update();
   });
 
