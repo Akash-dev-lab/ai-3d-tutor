@@ -12,7 +12,9 @@ const narrations = {
     1: "First, our little blue user needs to prove who they are. They walk up to the Auth Server (the green building) and say 'Hey, it's me!' (usually with a password).",
     2: "The server checks their ID. If it recognizes them, it prints a special card called a JWT. This card says 'I trust this person' and is signed by the server.",
     3: "Now the user has their JWT card (that glowing purple thing). They don't need to say their password again; they just show this card to the gate.",
-    4: "The gate checks the card's signature. It looks authentic! The gate opens up automatically, and our user can breeze right through. Simple and secure! Since the token holds the info, the server doesn't need to remember us, making it easy to handle millions of people!"
+    4: "The gate checks the card's signature. It looks authentic! The gate opens up automatically, and our user can breeze right through. Simple and secure! Since the token holds the info, the server doesn't need to remember us, making it easy to handle millions of people!",
+    5: "Your token has expired. The server rejects the request because the token is no longer valid in time. You must authenticate again to get a new token.",
+    6: "The token is invalid or has been tampered with. The server immediately denies access to protect the system from unauthorized requests."
 };
 
 app.get('/api/narration/:step', (req, res) => {

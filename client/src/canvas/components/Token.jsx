@@ -69,17 +69,30 @@ function Token({ step }) {
     animateFloating(state, delta);
     animateMovement(delta);
 
-    if (isDenied) {
-      // STRONG horizontal shake animation
-      const time = state.clock.getElapsedTime();
-      meshRef.current.position.x = Math.sin(time * 40) * 0.3; // Increased amplitude and frequency
-    } else {
-      // Reset position when not denied
+    const time = state.clock.getElapsedTime();
+
+    if (step === 5 && meshRef.current.children[0]) {
+      // Pulse effect for Expired Token
+      const pulse = 1.5 + Math.sin(time * 3) * 0.5;
+      meshRef.current.children[0].material.emissiveIntensity = pulse;
       meshRef.current.position.x = 0;
+    } else if (step === 6) {
+      // Shake effect for Invalid Token
+      meshRef.current.position.x = Math.sin(time * 40) * 0.3;
+      if (meshRef.current.children[0]) {
+        meshRef.current.children[0].material.emissiveIntensity = 2; // Reset intensity
+      }
+    } else {
+      // Reset state for non-denied steps
+      meshRef.current.position.x = 0;
+      if (meshRef.current.children[0]) {
+        meshRef.current.children[0].material.emissiveIntensity = 2;
+      }
     }
   });
 
-  const tokenColor = isDenied ? "#ef4444" : "#a78bfa";
+  const tokenColor =
+    step === 5 ? "#f59e0b" : step === 6 ? "#ef4444" : "#a78bfa";
 
   return (
     <GameObject
