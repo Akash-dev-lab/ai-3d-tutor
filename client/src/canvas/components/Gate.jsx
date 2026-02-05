@@ -1,7 +1,13 @@
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
-import GameObject from "./GameObject";
+import { useGLTF } from "@react-three/drei";
+import * as THREE from "three";
+
 function Gate({ step }) {
+  const { scene } = useGLTF("/models/gate.glb");
+  // Clone the scene so multiple gates don't share state
+  const clonedScene = useMemo(() => scene.clone(), [scene]);
+
   const barRef = useRef();
   const [isOpen, setIsOpen] = useState(false);
   const [rotationProgress, setRotationProgress] = useState(0);
@@ -11,16 +17,20 @@ function Gate({ step }) {
   const closedRotation = 0;
   const openRotation = Math.PI / 2; // 90 degrees
 
-  // Story-driven triggers
-  const openGate = () => setIsOpen(true);
-  const closeGate = () => setIsOpen(false);
+  // Find the named part in the model
+  useEffect(() => {
+    clonedScene.traverse((child) => {
+      if (child.name === "SecurityBar") {
+        barRef.current = child;
+      }
+    });
+  }, [clonedScene]);
 
   useEffect(() => {
     if (step === 4) {
-      openGate();
+      setIsOpen(true);
     } else {
-      closeGate();
-      // FORCE reset rotation state so gate visually snaps shut
+      setIsOpen(false);
       setRotationProgress(0);
       if (barRef.current) {
         barRef.current.rotation.z = closedRotation;
@@ -28,59 +38,31 @@ function Gate({ step }) {
     }
   }, [step]);
 
-  // Animation Loop
-  const animateGate = (delta) => {
-    if (barRef.current) {
-      const targetRotation = isOpen ? 1 : 0;
-
-      setRotationProgress((prev) => {
-        const newProgress = prev + (targetRotation - prev) * delta * 3;
-
-        // Apply rotation to the bar
-        barRef.current.rotation.z =
-          closedRotation + (openRotation - closedRotation) * newProgress;
-
-        return newProgress;
-      });
-    }
-  };
-
   useFrame((state, delta) => {
-    animateGate(delta);
-
     if (barRef.current) {
+      // 1. Rotation animation (Open/Close)
+      const targetProgress = isOpen ? 1 : 0;
+      const newProgress = THREE.MathUtils.lerp(
+        rotationProgress,
+        targetProgress,
+        delta * 3,
+      );
+      setRotationProgress(newProgress);
+
+      barRef.current.rotation.z =
+        closedRotation + (openRotation - closedRotation) * newProgress;
+
+      // 2. Shake animation (Denied)
       if (isDenied) {
-        // STRONG horizontal shake animation
         const time = state.clock.getElapsedTime();
-        barRef.current.position.x = Math.sin(time * 40) * 0.3; // Increased amplitude and frequency
+        barRef.current.position.x = Math.sin(time * 40) * 0.15;
       } else {
-        // Reset position when not denied
         barRef.current.position.x = 0;
       }
     }
   });
 
-  return (
-    <GameObject useModel={false}>
-      {/* Left Post */}
-      <mesh position={[-3, 1.5, -20]}>
-        <boxGeometry args={[0.2, 3, 0.2]} />
-        <meshStandardMaterial color="#dc2626" />
-      </mesh>
-      {/* Right Post */}
-      <mesh position={[3, 1.5, -20]}>
-        <boxGeometry args={[0.2, 3, 0.2]} />
-        <meshStandardMaterial color="#dc2626" />
-      </mesh>
-      {/* Horizontal Bar - Wrapped in Group for Animation */}
-      <group ref={barRef} position={[0, 2.5, -20]}>
-        <mesh position={[0, 0, 0]}>
-          <boxGeometry args={[6.4, 0.1, 0.1]} />
-          <meshStandardMaterial color="#dc2626" />
-        </mesh>
-      </group>
-    </GameObject>
-  );
+  return <primitive object={clonedScene} position={[0, 0, -20]} />;
 }
 
 export default Gate;
