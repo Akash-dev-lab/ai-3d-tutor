@@ -1,4 +1,4 @@
-import GameObject from './GameObject';
+import GameObject from "./GameObject";
 
 /**
  * AuthServer Component
@@ -8,12 +8,11 @@ import GameObject from './GameObject';
  */
 function AuthServer() {
   return (
-    <GameObject position={[0, 2, -10]} useModel={false}>
-      <mesh>
-        <boxGeometry args={[2, 4, 2]} />
-        <meshStandardMaterial color="#4ade80" />
-      </mesh>
-    </GameObject>
+    <GameObject
+      position={[0, 2, -10]}
+      useModel={true}
+      modelPath="/models/auth-server.glb"
+    />
   );
 }
 

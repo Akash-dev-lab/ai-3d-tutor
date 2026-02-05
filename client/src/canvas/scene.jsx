@@ -8,6 +8,7 @@ import User from "./components/User";
 import AuthServer from "./components/AuthServer";
 import Gate from "./components/Gate";
 import Token from "./components/Token";
+import TechEnvironment from "./components/TechEnvironment";
 import { Suspense } from "react";
 const JWT_STEP_CONFIG = {
   0: { title: "Introduction", next: 1 },
@@ -85,13 +86,14 @@ function SceneWorld({ visualStep }) {
 
   return (
     <Suspense fallback={null}>
-      <ambientLight intensity={0.8} />
-      <directionalLight position={[10, 10, 5]} intensity={1.2} />
+      <color attach="background" args={["#05080a"]} />
+      <fog attach="fog" args={["#05080a", 5, 45]} />
 
-      <mesh rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[10, 10]} />
-        <meshStandardMaterial color="#2a2a2a" />
-      </mesh>
+      <ambientLight intensity={0.4} />
+      <directionalLight position={[10, 10, 5]} intensity={1} />
+      <pointLight position={[-10, 5, -10]} color="#00ffff" intensity={2} />
+
+      <TechEnvironment />
 
       <User step={visualStep} />
       <AuthServer />
