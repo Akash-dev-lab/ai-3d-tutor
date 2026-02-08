@@ -143,8 +143,34 @@ const GLOW_STYLE = `
    SCENE WORLD (CANVAS CHILD)
    ========================= */
 
+// ... imports
+import LoginPanel from "./components/LoginPanel";
+
+// ... existing code ...
+
 function SceneWorld({ visualStep }) {
   const controlsRef = useRef();
+  const [isLoginSubmitting, setIsLoginSubmitting] = useState(false);
+  const { nextStep } = useJWTController();
+
+  const handleLoginStart = () => {
+    setIsLoginSubmitting(true);
+  };
+
+  const handleLoginComplete = () => {
+    // 1. Move to next step FIRST
+    nextStep();
+    // 2. We do NOT turn off isLoginSubmitting here.
+    // If we did, CameraController would see (Step 1 + Not Submitting) for one frame
+    // and snap back to the Form view.
+  };
+
+  // 3. Reset state only when we are safely in Step 2 or elsewhere
+  useEffect(() => {
+    if (visualStep !== 1) {
+      setIsLoginSubmitting(false);
+    }
+  }, [visualStep]);
 
   return (
     <Suspense fallback={null}>
@@ -179,7 +205,36 @@ function SceneWorld({ visualStep }) {
         distance={25}
       />
 
+      {/* Step 1 Specific Lighting */}
+      {visualStep === 1 && (
+        <>
+          {/* Blue Rim on User */}
+          <spotLight
+            position={[5, 2, 2]}
+            target-position={[0, 0, 0]}
+            intensity={2}
+            color="#0088ff"
+            angle={0.5}
+            penumbra={1}
+          />
+          {/* Green Accent on Panel */}
+          <pointLight
+            position={[-2, 2, 1]}
+            intensity={1}
+            color="#00f2ff"
+            distance={5}
+          />
+        </>
+      )}
+
       <TechEnvironment />
+
+      {visualStep === 1 && (
+        <LoginPanel
+          onLogin={handleLoginComplete}
+          onSubmitStart={handleLoginStart}
+        />
+      )}
 
       <User step={visualStep} />
       <AuthServer />
@@ -188,7 +243,11 @@ function SceneWorld({ visualStep }) {
       <ProtectedArea />
 
       <OrbitControls ref={controlsRef} enablePan={false} />
-      <CameraController step={visualStep} controlsRef={controlsRef} />
+      <CameraController
+        step={visualStep}
+        controlsRef={controlsRef}
+        isLoginSubmitting={isLoginSubmitting}
+      />
     </Suspense>
   );
 }
