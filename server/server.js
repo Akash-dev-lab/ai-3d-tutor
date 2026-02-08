@@ -8,13 +8,13 @@ app.use(cors());
 app.use(express.json());
 
 const narrations = {
-    0: "Hi there! I'm here to show you how a 'JWT' works. Think of it like a digital wristband for an exclusive club. Let's see how you get one!",
-    1: "First, our little blue user needs to prove who they are. They walk up to the Auth Server (the green building) and say 'Hey, it's me!' (usually with a password).",
-    2: "The server checks their ID. If it recognizes them, it prints a special card called a JWT. This card says 'I trust this person' and is signed by the server.",
-    3: "Now the user has their JWT card (that glowing purple thing). They don't need to say their password again; they just show this card to the gate.",
-    4: "The gate checks the card's signature. It looks authentic! The gate opens up automatically, and our user can breeze right through. Simple and secure! Since the token holds the info, the server doesn't need to remember us, making it easy to handle millions of people!",
-    5: "Your token has expired. The server rejects the request because the token is no longer valid in time. You must authenticate again to get a new token.",
-    6: "The token is invalid or has been tampered with. The server immediately denies access to protect the system from unauthorized requests."
+    0: "Welcome to the JWT visualizer. JWT stands for JSON Web Token. It is a secure way to share information between a user and a server.",
+    1: "The process begins with a login request. The user sends their credentials to the authentication server. This is how the server knows who the user is.",
+    2: "The server verifies the credentials. If they are correct, the server creates a JWT. This token contains user data and a digital signature for security.",
+    3: "The user receives and stores the token. They can now use this token to access protected areas. They do not need to send their password ever again.",
+    4: "When the user reaches a protected gate, they show their token. The gate verifies the digital signature. If the signature is valid, access is granted.",
+    5: "Every token has an expiration time. This improves security by limiting how long a token is valid. If a token expires, the user must log in again.",
+    6: "A token is invalid if it has been changed or if the signature does not match. The gate rejects modified tokens to keep the system secure."
 };
 
 app.get('/api/narration/:step', (req, res) => {
