@@ -3,70 +3,6 @@ import { Html, Text } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 
-function DataParticles({ active, onComplete }) {
-  const count = 20;
-  const [positions, setPositions] = useState(() => {
-    const arr = new Float32Array(count * 3);
-    for (let i = 0; i < count; i++) {
-      arr[i * 3] = (Math.random() - 0.5) * 0.5; // x spread
-      arr[i * 3 + 1] = (Math.random() - 0.5) * 0.5; // y spread
-      arr[i * 3 + 2] = (Math.random() - 0.5) * 0.2; // z spread
-    }
-    return arr;
-  });
-
-  const progressRef = useRef(0);
-
-  useFrame((state, delta) => {
-    if (!active) return;
-
-    progressRef.current += delta * 0.8; // Duration approx 1.25s
-
-    if (progressRef.current >= 1.2) {
-      if (onComplete) onComplete();
-      return;
-    }
-
-    // Target: AuthServer at [0, 2, -10]
-    // Start: LoginPanel at [-1.2, 1.5, 0]
-    // Relative Vector: [1.2, 0.5, -10]
-
-    // We update the mesh position or individual particles?
-    // Let's just move the whole group for simplicity + jitter
-  });
-
-  // Using a group for the whole particle system movement is easier for "flow"
-  // We'll interpolate the group position from [0,0,0] (local) to [1.2, 0.5, -10] (relative)
-  const startPos = new THREE.Vector3(0, 0, 0);
-  const endPos = new THREE.Vector3(1.2, 0.5, -10);
-
-  const currentPos = new THREE.Vector3()
-    .copy(startPos)
-    .lerp(endPos, Math.min(progressRef.current, 1));
-
-  if (!active) return null;
-
-  return (
-    <points position={currentPos}>
-      <bufferGeometry>
-        <bufferAttribute
-          attach="attributes-position"
-          count={count}
-          array={positions}
-          itemSize={3}
-        />
-      </bufferGeometry>
-      <pointsMaterial
-        size={0.1}
-        color="#00f2ff"
-        transparent
-        opacity={1 - Math.pow(Math.max(0, progressRef.current - 0.8), 2)} // Fade out at end
-        blending={THREE.AdditiveBlending}
-      />
-    </points>
-  );
-}
-
 const FloatingPanel = ({ children }) => {
   const ref = useRef();
   useFrame((state) => {
@@ -84,10 +20,11 @@ export default function LoginPanel({ onLogin, onSubmitStart }) {
     if (isSubmitting) return;
     setIsSubmitting(true);
     if (onSubmitStart) onSubmitStart();
-  };
 
-  const handleAnimationComplete = () => {
-    onLogin();
+    // Trigger transition after delay (simulating data travel time)
+    setTimeout(() => {
+      onLogin();
+    }, 1500);
   };
 
   return (
@@ -97,20 +34,20 @@ export default function LoginPanel({ onLogin, onSubmitStart }) {
         <Html transform distanceFactor={1.5} center>
           <div
             style={{
-              width: "320px",
-              padding: "24px",
-              background: "rgba(16, 24, 39, 0.7)",
-              border: "1px solid rgba(0, 242, 255, 0.3)",
+              width: "380px", // Increased size
+              padding: "32px",
+              background: "rgba(10, 15, 30, 0.85)", // Slightly darker for contrast
+              border: "2px solid rgba(0, 242, 255, 0.5)", // Brighter border
               borderRadius: "16px",
-              backdropFilter: "blur(12px)",
+              backdropFilter: "blur(16px)",
               boxShadow:
-                "0 4px 30px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(0, 242, 255, 0.05)",
+                "0 0 40px rgba(0, 242, 255, 0.15), inset 0 0 20px rgba(0, 242, 255, 0.1)", // Enhanced glow
               fontFamily: "'Inter', sans-serif",
               color: "white",
               display: "flex",
               flexDirection: "column",
-              gap: "16px",
-              opacity: isSubmitting ? 0 : 1, // Fade out on submit
+              gap: "20px",
+              opacity: isSubmitting ? 0 : 1,
               transition: "opacity 0.5s ease",
               pointerEvents: isSubmitting ? "none" : "auto",
             }}
@@ -120,28 +57,29 @@ export default function LoginPanel({ onLogin, onSubmitStart }) {
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: "10px",
-                marginBottom: "4px",
+                gap: "12px",
+                marginBottom: "8px",
               }}
             >
               <div
                 style={{
-                  width: "24px",
-                  height: "24px",
+                  width: "28px",
+                  height: "28px",
                   borderRadius: "50%",
                   background: "#00f2ff",
-                  boxShadow: "0 0 10px #00f2ff",
+                  boxShadow: "0 0 15px #00f2ff",
                 }}
               />
               <h2
                 style={{
                   margin: 0,
-                  fontSize: "18px",
-                  fontWeight: "600",
-                  letterSpacing: "0.5px",
+                  fontSize: "22px",
+                  fontWeight: "700",
+                  letterSpacing: "1px",
+                  textShadow: "0 0 10px rgba(0, 242, 255, 0.5)",
                 }}
               >
-                Secure Login
+                SECURE ACCESS
               </h2>
             </div>
 
@@ -150,22 +88,25 @@ export default function LoginPanel({ onLogin, onSubmitStart }) {
               <label
                 style={{
                   display: "block",
-                  fontSize: "12px",
-                  color: "#94a3b8",
-                  marginBottom: "6px",
+                  fontSize: "11px",
+                  color: "#00f2ff", // Neon accent text
+                  marginBottom: "8px",
+                  letterSpacing: "1px",
+                  fontWeight: "bold",
                 }}
               >
-                USERNAME
+                // USERNAME_ID
               </label>
               <div
                 style={{
-                  background: "rgba(255, 255, 255, 0.05)",
-                  border: "1px solid rgba(255, 255, 255, 0.1)",
+                  background: "rgba(0, 242, 255, 0.05)",
+                  border: "1px solid rgba(0, 242, 255, 0.4)", // Glowing border
                   borderRadius: "8px",
-                  padding: "10px 12px",
-                  fontSize: "14px",
+                  padding: "14px 16px",
+                  fontSize: "15px",
                   color: "#e2e8f0",
                   fontFamily: "monospace",
+                  boxShadow: "0 0 10px rgba(0, 242, 255, 0.1)", // Input glow
                 }}
               >
                 dev_user_01
@@ -177,22 +118,25 @@ export default function LoginPanel({ onLogin, onSubmitStart }) {
               <label
                 style={{
                   display: "block",
-                  fontSize: "12px",
-                  color: "#94a3b8",
-                  marginBottom: "6px",
+                  fontSize: "11px",
+                  color: "#00f2ff",
+                  marginBottom: "8px",
+                  letterSpacing: "1px",
+                  fontWeight: "bold",
                 }}
               >
-                PASSWORD
+                // PASS_KEY
               </label>
               <div
                 style={{
-                  background: "rgba(255, 255, 255, 0.05)",
-                  border: "1px solid rgba(255, 255, 255, 0.1)",
+                  background: "rgba(0, 242, 255, 0.05)",
+                  border: "1px solid rgba(0, 242, 255, 0.4)",
                   borderRadius: "8px",
-                  padding: "10px 12px",
-                  fontSize: "14px",
+                  padding: "14px 16px",
+                  fontSize: "15px",
                   color: "#e2e8f0",
-                  letterSpacing: "3px",
+                  letterSpacing: "4px",
+                  boxShadow: "0 0 10px rgba(0, 242, 255, 0.1)",
                 }}
               >
                 •••••••••••
@@ -203,29 +147,34 @@ export default function LoginPanel({ onLogin, onSubmitStart }) {
             <button
               onClick={handleSubmit}
               style={{
-                marginTop: "8px",
-                background: "linear-gradient(90deg, #00f2ff 0%, #0088ff 100%)",
-                border: "none",
+                marginTop: "12px",
+                background: "rgba(0, 242, 255, 0.9)",
+                border: "1px solid #ffffff",
                 borderRadius: "8px",
-                padding: "12px",
-                color: "#0f172a",
-                fontWeight: "bold",
-                fontSize: "14px",
+                padding: "16px",
+                color: "#000",
+                fontWeight: "900",
+                fontSize: "15px",
                 cursor: "pointer",
-                boxShadow: "0 0 15px rgba(0, 242, 255, 0.4)",
-                transition: "transform 0.2s, box-shadow 0.2s",
+                boxShadow: "0 0 25px rgba(0, 242, 255, 0.4)",
+                transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
                 textTransform: "uppercase",
-                letterSpacing: "1px",
+                letterSpacing: "2px",
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.transform = "scale(1.02)";
+                e.currentTarget.style.transform =
+                  "scale(1.02) translateY(-2px)";
                 e.currentTarget.style.boxShadow =
-                  "0 0 25px rgba(0, 242, 255, 0.6)";
+                  "0 0 40px rgba(0, 242, 255, 0.7)";
+                e.currentTarget.style.background = "#fff";
+                e.currentTarget.style.color = "#00f2ff";
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.transform = "scale(1)";
                 e.currentTarget.style.boxShadow =
-                  "0 0 15px rgba(0, 242, 255, 0.4)";
+                  "0 0 25px rgba(0, 242, 255, 0.4)";
+                e.currentTarget.style.background = "rgba(0, 242, 255, 0.9)";
+                e.currentTarget.style.color = "#000";
               }}
             >
               Authenticate
@@ -233,12 +182,6 @@ export default function LoginPanel({ onLogin, onSubmitStart }) {
           </div>
         </Html>
       </FloatingPanel>
-
-      {/* Particle Effect on Submit */}
-      <DataParticles
-        active={isSubmitting}
-        onComplete={handleAnimationComplete}
-      />
     </group>
   );
 }
