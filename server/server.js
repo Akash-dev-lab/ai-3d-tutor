@@ -14,7 +14,8 @@ const narrations = {
     3: "The user receives and stores the token. They can now use this token to access protected areas. They do not need to send their password ever again.",
     4: "When the user reaches a protected gate, they show their token. The gate verifies the digital signature. If the signature is valid, access is granted.",
     5: "Every token has an expiration time. This improves security by limiting how long a token is valid. If a token expires, the user must log in again.",
-    6: "A token is invalid if it has been changed or if the signature does not match. The gate rejects modified tokens to keep the system secure."
+    6: "A token is invalid if it has been changed or if the signature does not match. The gate rejects modified tokens to keep the system secure.",
+    100: "Hi there. Have you ever wondered how websites remember who you are without asking for your password every single second? That’s where the JSON Web Token—or JWT—comes in. Let’s follow a simple journey. First, a user sends their login details to an authentication server. If the details are correct, the server doesn't just open a door; instead, it hands the user a digital key—a JWT. This token is special. It’s a compact, secure package that contains a digital signature proving it hasn't been tampered with. Now, the user carries this token to a security gate. They don't need to re-enter their password; they simply show the token. The gate quickly verifies the signature, and once confirmed, it swings open to grant access. It’s a simple, secure, and efficient way to handle identity across the web. With a JWT, the server doesn't need to remember everything about you—it just needs to trust the token you hold."
 };
 
 app.get('/api/narration/:step', (req, res) => {

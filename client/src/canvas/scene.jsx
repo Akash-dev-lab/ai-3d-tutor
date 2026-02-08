@@ -10,6 +10,7 @@ import Gate from "./components/Gate";
 import Token from "./components/Token";
 import TechEnvironment from "./components/TechEnvironment";
 import { Suspense } from "react";
+import { useSpeech } from "./hooks/useSpeech";
 const JWT_STEP_CONFIG = {
   0: { title: "Introduction", next: 1 },
   1: { title: "Login Request", next: 2 },
@@ -34,6 +35,7 @@ const useJWTController = () => {
   const [step, setStep] = useState(0);
   const [visualStep, setVisualStep] = useState(0);
   const [narration, setNarration] = useState("Loading...");
+  const { speak, stop } = useSpeech();
 
   // 🔒 Guard: ensure step is always valid
   const safeStep = JWT_STEP_CONFIG[step] ? step : 0;
@@ -51,29 +53,63 @@ const useJWTController = () => {
     fetch(`http://localhost:5000/api/narration/${safeStep}`)
       .then((res) => res.json())
       .then((data) => {
-        setNarration(data?.narration || "Explanation unavailable.");
+        const text = data?.narration || "Explanation unavailable.";
+        setNarration(text);
+        speak(text);
       })
       .catch(() => {
         setNarration("Explanation unavailable (offline).");
       });
-  }, [safeStep]);
+  }, [safeStep, speak]);
 
   const nextStep = () => {
     const next = JWT_STEP_CONFIG[safeStep]?.next ?? 0;
     setStep(next);
   };
 
+  const playFullStory = () => {
+    setStep(0);
+    setNarration("Loading full story...");
+
+    // Switch to step 100 for continuous narration
+    setTimeout(() => {
+      setStep(100); // Trigger full narration text
+      setVisualStep(0); // Start visuals at 0
+    }, 500);
+
+    const timeline = [
+      { step: 1, delay: 10000 }, // Intro ends at 10s
+      { step: 2, delay: 15000 }, // Login ends at 15s
+      { step: 3, delay: 25000 }, // Token issued ends at 25s
+      { step: 4, delay: 35000 }, // Access request ends at 35s
+      { step: 0, delay: 50000 }, // Verification & Entry ends at 50s, back to intro/conclusion
+    ];
+
+    timeline.forEach(({ step, delay }) => {
+      setTimeout(() => setVisualStep(step), delay);
+    });
+
+    // Reset back to normal mode after 62 seconds
+    setTimeout(() => {
+      setStep(0);
+      setVisualStep(0);
+    }, 62000);
+  };
+
   return {
     currentStep: safeStep,
     visualStep,
     narration,
-    stepTitle: JWT_STEP_CONFIG[safeStep].title,
+    stepTitle:
+      safeStep === 100 ? "Full Story" : JWT_STEP_CONFIG[safeStep].title,
     isFirstStep: safeStep === 0,
     isLastStep: safeStep === 6,
+    isFullStory: safeStep === 100,
     isExpiredToken,
     isInvalidToken,
     isAccessDenied,
     nextStep,
+    playFullStory,
   };
 };
 
@@ -143,7 +179,9 @@ export default function Scene() {
     stepTitle,
     isFirstStep,
     isLastStep,
+    isFullStory,
     nextStep,
+    playFullStory,
   } = useJWTController();
 
   return (
@@ -178,6 +216,34 @@ export default function Scene() {
           alignItems: "center",
         }}
       >
+        {/* 🔹 AUDIO INDICATOR */}
+        <div
+          style={{
+            position: "absolute",
+            top: "10px",
+            right: "15px",
+            display: "flex",
+            alignItems: "center",
+            gap: "5px",
+            opacity: 0.6,
+          }}
+        >
+          <span
+            style={{ fontSize: "12px", color: "#4ade80", fontWeight: "bold" }}
+          >
+            AUDIO ON
+          </span>
+          <div
+            style={{
+              width: "8px",
+              height: "8px",
+              background: "#4ade80",
+              borderRadius: "50%",
+              boxShadow: "0 0 8px #4ade80",
+            }}
+          ></div>
+        </div>
+
         {/* 🔹 STEP TITLE */}
         <h3
           style={{
@@ -202,24 +268,47 @@ export default function Scene() {
           {narration || "Loading..."}
         </p>
 
-        {/* 🔹 ACTION BUTTON */}
-        <button
-          style={{
-            padding: "8px 26px",
-            background: "#4ade80",
-            border: "none",
-            borderRadius: "20px",
-            color: "black",
-            fontWeight: "bold",
-            cursor: "pointer",
-            fontSize: "14px",
-            marginTop: "6px",
-            transition: "transform 0.1s",
-          }}
-          onClick={nextStep}
-        >
-          {isLastStep ? "Restart" : "Next Step"}
-        </button>
+        {/* 🔹 ACTION BUTTONS */}
+        <div style={{ display: "flex", gap: "10px" }}>
+          {!isFullStory && (
+            <button
+              style={{
+                padding: "8px 26px",
+                background: "#4a9eff",
+                border: "none",
+                borderRadius: "20px",
+                color: "white",
+                fontWeight: "bold",
+                cursor: "pointer",
+                fontSize: "14px",
+                marginTop: "6px",
+                transition: "transform 0.1s",
+              }}
+              onClick={playFullStory}
+            >
+              Play Full Story
+            </button>
+          )}
+          <button
+            style={{
+              padding: "8px 26px",
+              background: "#4ade80",
+              border: "none",
+              borderRadius: "20px",
+              color: "black",
+              fontWeight: "bold",
+              cursor: "pointer",
+              fontSize: "14px",
+              marginTop: "6px",
+              transition: "transform 0.1s",
+              opacity: isFullStory ? 0.5 : 1,
+              pointerEvents: isFullStory ? "none" : "auto",
+            }}
+            onClick={nextStep}
+          >
+            {isLastStep ? "Restart" : "Next Step"}
+          </button>
+        </div>
       </div>
     </>
   );
