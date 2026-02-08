@@ -113,6 +113,15 @@ const useJWTController = () => {
   };
 };
 
+// 🔹 CSS for the Glowing Animation
+const GLOW_STYLE = `
+  @keyframes glow {
+    0% { box-shadow: 0 0 4px #4ade80, 0 0 8px #4ade80; }
+    50% { box-shadow: 0 0 16px #4ade80, 0 0 26px #4ade80; }
+    100% { box-shadow: 0 0 5px #4ade80, 0 0 10px #4ade80; }
+  }
+`;
+
 /* =========================
    SCENE WORLD (CANVAS CHILD)
    ========================= */
@@ -179,13 +188,12 @@ export default function Scene() {
     stepTitle,
     isFirstStep,
     isLastStep,
-    isFullStory,
     nextStep,
-    playFullStory,
   } = useJWTController();
 
   return (
     <>
+      <style>{GLOW_STYLE}</style>
       <Canvas
         camera={{ position: [5, 5, 5], fov: 50 }}
         style={{ width: "100%", height: "100vh" }}
@@ -270,25 +278,6 @@ export default function Scene() {
 
         {/* 🔹 ACTION BUTTONS */}
         <div style={{ display: "flex", gap: "10px" }}>
-          {!isFullStory && (
-            <button
-              style={{
-                padding: "8px 26px",
-                background: "#4a9eff",
-                border: "none",
-                borderRadius: "20px",
-                color: "white",
-                fontWeight: "bold",
-                cursor: "pointer",
-                fontSize: "14px",
-                marginTop: "6px",
-                transition: "transform 0.1s",
-              }}
-              onClick={playFullStory}
-            >
-              Play Full Story
-            </button>
-          )}
           <button
             style={{
               padding: "8px 26px",
@@ -301,8 +290,7 @@ export default function Scene() {
               fontSize: "14px",
               marginTop: "6px",
               transition: "transform 0.1s",
-              opacity: isFullStory ? 0.5 : 1,
-              pointerEvents: isFullStory ? "none" : "auto",
+              animation: "glow 4s infinite ease-in-out",
             }}
             onClick={nextStep}
           >
