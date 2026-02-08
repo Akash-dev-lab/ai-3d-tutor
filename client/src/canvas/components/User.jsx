@@ -44,8 +44,12 @@ function User({ step }) {
   useEffect(() => {
     if (step === 1) {
       moveUserToServer();
-    } else if (step === 3) {
+    } else if (step === 3 || step === 5) {
       moveUserToGate();
+    } else if (step === 4) {
+      // Move past the gate
+      setTargetPosition([0, BASE_Y, -25]);
+      setProgress(0);
     } else if (step === 0) {
       resetUser();
     }
