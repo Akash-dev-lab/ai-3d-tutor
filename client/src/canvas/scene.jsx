@@ -35,6 +35,7 @@ const useJWTController = () => {
   const [step, setStep] = useState(0);
   const [visualStep, setVisualStep] = useState(0);
   const [narration, setNarration] = useState("Loading...");
+  const [isMuted, setIsMuted] = useState(false);
   const { speak, stop } = useSpeech();
 
   // 🔒 Guard: ensure step is always valid
@@ -55,12 +56,21 @@ const useJWTController = () => {
       .then((data) => {
         const text = data?.narration || "Explanation unavailable.";
         setNarration(text);
-        speak(text);
+        speak(text, isMuted);
       })
       .catch(() => {
         setNarration("Explanation unavailable (offline).");
       });
-  }, [safeStep, speak]);
+  }, [safeStep, speak, isMuted]);
+
+  const toggleMute = () => {
+    setIsMuted((prev) => {
+      const next = !prev;
+      if (next) stop();
+      else speak(narration, false);
+      return next;
+    });
+  };
 
   const nextStep = () => {
     const next = JWT_STEP_CONFIG[safeStep]?.next ?? 0;
@@ -108,8 +118,10 @@ const useJWTController = () => {
     isExpiredToken,
     isInvalidToken,
     isAccessDenied,
+    isMuted,
     nextStep,
     playFullStory,
+    toggleMute,
   };
 };
 
@@ -119,6 +131,11 @@ const GLOW_STYLE = `
     0% { box-shadow: 0 0 4px #4ade80, 0 0 8px #4ade80; }
     50% { box-shadow: 0 0 16px #4ade80, 0 0 26px #4ade80; }
     100% { box-shadow: 0 0 5px #4ade80, 0 0 10px #4ade80; }
+  }
+
+  @keyframes pulseBar {
+    0%, 100% { height: 4px; }
+    50% { height: 16px; }
   }
 `;
 
@@ -188,7 +205,9 @@ export default function Scene() {
     stepTitle,
     isFirstStep,
     isLastStep,
+    isMuted,
     nextStep,
+    toggleMute,
   } = useJWTController();
 
   return (
@@ -224,32 +243,80 @@ export default function Scene() {
           alignItems: "center",
         }}
       >
-        {/* 🔹 AUDIO INDICATOR */}
+        {/* 🔹 AUDIO CONTROLS */}
         <div
+          onClick={toggleMute}
           style={{
             position: "absolute",
-            top: "10px",
-            right: "15px",
+            top: "14px",
+            right: "20px",
             display: "flex",
             alignItems: "center",
-            gap: "5px",
-            opacity: 0.6,
+            gap: "10px",
+            cursor: "pointer",
+            padding: "4px 8px",
+            borderRadius: "8px",
+            background: "rgba(255,255,255,0.05)",
+            transition: "all 0.2s",
           }}
+          onMouseEnter={(e) =>
+            (e.currentTarget.style.background = "rgba(255,255,255,0.1)")
+          }
+          onMouseLeave={(e) =>
+            (e.currentTarget.style.background = "rgba(255,255,255,0.05)")
+          }
         >
-          <span
-            style={{ fontSize: "12px", color: "#4ade80", fontWeight: "bold" }}
+          {/* Speaker Icon */}
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke={isMuted ? "#ef4444" : "#4ade80"}
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
           >
-            AUDIO ON
-          </span>
-          <div
-            style={{
-              width: "8px",
-              height: "8px",
-              background: "#4ade80",
-              borderRadius: "50%",
-              boxShadow: "0 0 8px #4ade80",
-            }}
-          ></div>
+            {isMuted ? (
+              <>
+                <path d="M11 5L6 9H2V15H6L11 19V5Z" />
+                <line x1="23" y1="9" x2="17" y2="15" />
+                <line x1="17" y1="9" x2="23" y2="15" />
+              </>
+            ) : (
+              <>
+                <path d="M11 5L6 9H2V15H6L11 19V5Z" />
+                <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+                <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+              </>
+            )}
+          </svg>
+
+          {/* Pulsing Bars */}
+          {!isMuted && (
+            <div
+              style={{
+                display: "flex",
+                alignItems: "flex-end",
+                gap: "3px",
+                height: "16px",
+                width: "18px",
+              }}
+            >
+              {[0.4, 0.7, 0.5, 0.9].map((delay, i) => (
+                <div
+                  key={i}
+                  style={{
+                    width: "3px",
+                    background: "#4ade80",
+                    borderRadius: "2px",
+                    animation: `pulseBar 1s infinite ease-in-out`,
+                    animationDelay: `${delay}s`,
+                  }}
+                ></div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* 🔹 STEP TITLE */}

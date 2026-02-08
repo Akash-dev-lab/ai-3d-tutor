@@ -4,13 +4,13 @@ export const useSpeech = () => {
     const synth = typeof window !== 'undefined' ? window.speechSynthesis : null;
     const utteranceRef = useRef(null);
 
-    const speak = useCallback((text) => {
+    const speak = useCallback((text, isMuted = false) => {
         if (!synth) return;
 
         // Cancel any ongoing speech
         synth.cancel();
 
-        if (!text) return;
+        if (!text || isMuted) return;
 
         const utterance = new SpeechSynthesisUtterance(text);
         
